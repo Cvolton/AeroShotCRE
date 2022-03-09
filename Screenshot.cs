@@ -143,7 +143,7 @@ namespace AeroShot
                     uint ColorizationColor = 0;
                     bool ColorizationOpaqueBlend = false;
 
-					WindowsApi.DWM_COLORIZATION_PARAMS originalParameters = new WindowsApi.DWM_COLORIZATION_PARAMS();
+					DwmApi.DWM_COLORIZATION_PARAMS originalParameters = new DwmApi.DWM_COLORIZATION_PARAMS();
 					if (Environment.OSVersion.Version.Major >= 6)
 					{
                         try
@@ -161,15 +161,15 @@ namespace AeroShot
                                     WindowsApi.DwmGetColorizationParameters(out originalParameters);
 
                                     // Custom colorization parameters
-                                    WindowsApi.DWM_COLORIZATION_PARAMS parameters;
+                                    DwmApi.DWM_COLORIZATION_PARAMS parameters;
                                     WindowsApi.DwmGetColorizationParameters(out parameters);
-                                    parameters.clrAfterGlowBalance = 2;
-                                    parameters.clrBlurBalance = 29;
-                                    parameters.clrColor = ColorToBgra(data.AeroColor);
+                                    parameters.clrAfterGlowBalance = UintToQUAD(2);
+                                    parameters.clrBlurBalance = UintToQUAD(29);
+                                    parameters.clrColor = data.AeroColor;
                                     parameters.nIntensity = 69;
 
                                     // Call the DwmSetColorizationParameters to make the change take effect.
-                                    WindowsApi.DwmSetColorizationParameters(ref parameters, false);
+                                    WindowsApi.DwmSetColorizationParameters(ref parameters);
                                 }
                                 AeroColorToggled = true;
                             }
@@ -213,7 +213,7 @@ namespace AeroShot
                             WindowsApi.DwmpSetColorization(ColorizationColor, ColorizationOpaqueBlend, 0xFF);
                         }
                         else
-                            WindowsApi.DwmSetColorizationParameters(ref originalParameters, false);
+                            WindowsApi.DwmSetColorizationParameters(ref originalParameters);
                     }
 
                     if (ClearTypeToggled)
@@ -590,7 +590,7 @@ namespace AeroShot
                 try
                 {
                     //win 7
-                    WindowsApi.DWM_COLORIZATION_PARAMS parameters, originalParameters = new WindowsApi.DWM_COLORIZATION_PARAMS();
+                    DwmApi.DWM_COLORIZATION_PARAMS parameters, originalParameters = new DwmApi.DWM_COLORIZATION_PARAMS();
                     //win vista
                     UInt32 ColorizationColor = 0;
                     bool fOpaque = true;
@@ -613,12 +613,12 @@ namespace AeroShot
                         WindowsApi.DwmGetColorizationParameters(out originalParameters);
 
                         //Set custom fully transparent parameters
-                        parameters.clrAfterGlowBalance = 0;
-                        parameters.clrBlurBalance = 100;
+                        parameters.clrAfterGlowBalance = UintToQUAD(0);
+                        parameters.clrBlurBalance = UintToQUAD(100);
                         parameters.nIntensity = 0;
 
                         // Call the DwmSetColorizationParameters to make the change take effect.
-                        WindowsApi.DwmSetColorizationParameters(ref parameters, false);
+                        WindowsApi.DwmSetColorizationParameters(ref parameters);
                     }
                     
 
@@ -640,7 +640,7 @@ namespace AeroShot
                     }
                     else
                     {
-                        WindowsApi.DwmSetColorizationParameters(ref originalParameters, false);
+                        WindowsApi.DwmSetColorizationParameters(ref originalParameters);
                     }
                 }
                 catch (Exception)
@@ -690,17 +690,17 @@ namespace AeroShot
                 try
                 {
                     //Get original colorization parameters
-                    WindowsApi.DWM_COLORIZATION_PARAMS parameters, originalParameters;
+                    DwmApi.DWM_COLORIZATION_PARAMS parameters, originalParameters;
                     WindowsApi.DwmGetColorizationParameters(out parameters);
                     WindowsApi.DwmGetColorizationParameters(out originalParameters);
 
                     //Set custom fully transparent parameters
-                    parameters.clrAfterGlowBalance = 0;
-                    parameters.clrBlurBalance = 100;
+                    parameters.clrAfterGlowBalance = UintToQUAD(0);
+                    parameters.clrBlurBalance = UintToQUAD(100);
                     parameters.nIntensity = 0;
 
                     // Call the DwmSetColorizationParameters to make the change take effect.
-                    WindowsApi.DwmSetColorizationParameters(ref parameters, false);
+                    WindowsApi.DwmSetColorizationParameters(ref parameters);
 
                     backdrop.BackColor = Color.White;
                     RefreshBackdrop();
@@ -714,7 +714,7 @@ namespace AeroShot
                     whiteTransparentInactiveShot.Dispose();
                     blackTransparentInactiveShot.Dispose();
 
-                    WindowsApi.DwmSetColorizationParameters(ref originalParameters, false);
+                    WindowsApi.DwmSetColorizationParameters(ref originalParameters);
                 }
                 catch (Exception)
                 {
@@ -1064,6 +1064,17 @@ namespace AeroShot
         private static byte ToByte(int i)
         {
             return (byte)(i > 255 ? 255 : (i < 0 ? 0 : i));
+        }
+
+        private static Gdi32.RGBQUAD UintToQUAD(uint i)
+        {
+            return new Gdi32.RGBQUAD
+            {
+                rgbBlue = (byte) i,
+                rgbGreen = (byte) (i >> 8),
+                rgbRed = (byte) (i >> 16),
+                rgbReserved = (byte) (i >> 24)
+            };
         }
     }
 

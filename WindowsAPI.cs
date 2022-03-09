@@ -26,17 +26,6 @@ namespace AeroShot
 {
     internal static class WindowsApi
     {
-        internal struct DWM_COLORIZATION_PARAMS
-        {
-            public uint clrColor;
-            public uint clrAfterGlow;
-            public uint nIntensity;
-            public uint clrAfterGlowBalance;
-            public uint clrBlurBalance;
-            public uint clrGlassReflectionIntensity;
-            public bool fOpaque;
-        }
-
         internal static HWND FindWindow(string lpClassName, string lpWindowName)
             => User32.FindWindow(lpClassName, lpWindowName);
 
@@ -61,6 +50,7 @@ namespace AeroShot
         internal static int GetWindowTextLength(HWND hWnd) => User32.GetWindowTextLength(hWnd);
 
         internal static HWND GetForegroundWindow() => User32.GetForegroundWindow();
+
         internal static bool RegisterHotKey(HWND hWnd, int id, int fsModifiers, int vlc)
             => User32.RegisterHotKey(hWnd, id, (User32.HotKeyModifiers) fsModifiers, (uint) vlc);
 
@@ -76,27 +66,25 @@ namespace AeroShot
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool SystemParametersInfo(uint uiAction, uint uiParam, bool pvParam, uint fWinIni);
 
-        internal static bool RedrawWindow(HWND hWnd, PRECT lpRectUpdate, IntPtr hrgnUpdate, User32.RedrawWindowFlags flags)
+        internal static bool RedrawWindow(HWND hWnd, PRECT lpRectUpdate, IntPtr hrgnUpdate,
+            User32.RedrawWindowFlags flags)
             => User32.RedrawWindow(hWnd, lpRectUpdate, hrgnUpdate, flags);
 
         internal static uint GetDpiForWindow(HWND hWnd) => User32.GetDpiForWindow(hWnd);
 
-        [DllImport("dwmapi.dll")]
-        internal static extern int DwmIsCompositionEnabled(out bool enabled);
+        internal static HRESULT DwmIsCompositionEnabled(out bool enabled)
+            => DwmApi.DwmIsCompositionEnabled(out enabled);
 
-        [DllImport("dwmapi.dll", EntryPoint = "#127", PreserveSig = false)]
-        internal static extern void DwmGetColorizationParameters(out DWM_COLORIZATION_PARAMS parameters);
+        internal static void DwmGetColorizationParameters(out DwmApi.DWM_COLORIZATION_PARAMS parameters)
+            => DwmApi.DwmpGetColorizationParameters(out parameters);
 
-        [DllImport("dwmapi.dll", EntryPoint = "#131", PreserveSig = false)]
-        internal static extern void DwmSetColorizationParameters(ref DWM_COLORIZATION_PARAMS parameters, bool unknown);
+        internal static void DwmSetColorizationParameters(ref DwmApi.DWM_COLORIZATION_PARAMS parameters)
+            => DwmApi.DwmpSetColorizationParameters(parameters);
 
-        [DllImport("dwmapi.dll", PreserveSig = false)]
-        public static extern void DwmEnableComposition(bool bEnable);
+        public static void DwmGetColorizationColor(out uint ColorizationColor, out bool ColorizationOpaqueBlend)
+            => DwmApi.DwmGetColorizationColor(out ColorizationColor, out ColorizationOpaqueBlend);
 
-        [DllImport("dwmapi.dll", PreserveSig = false)]
-        public static extern void DwmGetColorizationColor(out uint ColorizationColor, [MarshalAs(UnmanagedType.Bool)]out bool ColorizationOpaqueBlend);
-
-        [DllImport("dwmapi.dll", EntryPoint = "#104")]
+        [DllImport("dwmapi.dll", EntryPoint = "#104")] // Only for Windows Vista
         public static extern int DwmpSetColorization(UInt32 ColorizationColor, bool ColorizationOpaqueBlend, UInt32 Opacity);
     }
 }
