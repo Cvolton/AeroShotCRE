@@ -24,101 +24,6 @@ using Vanara.PInvoke;
 
 namespace AeroShot
 {
-    internal delegate bool CallBackPtr(IntPtr hwnd, int lParam);
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct WindowsRect
-    {
-        internal int Left;
-        internal int Top;
-        internal int Right;
-        internal int Bottom;
-
-        internal WindowsRect(int x)
-        {
-            Left = x;
-            Top = x;
-            Right = x;
-            Bottom = x;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct WindowsMargins
-    {
-        internal int LeftWidth;
-        internal int RightWidth;
-        internal int TopHeight;
-        internal int BottomHeight;
-
-        internal WindowsMargins(int left, int right, int top, int bottom)
-        {
-            LeftWidth = left;
-            RightWidth = right;
-            TopHeight = top;
-            BottomHeight = bottom;
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct BitmapInfo
-    {
-        public Int32 biSize;
-        public Int32 biWidth;
-        public Int32 biHeight;
-        public Int16 biPlanes;
-        public Int16 biBitCount;
-        public Int32 biCompression;
-        public Int32 biSizeImage;
-        public Int32 biXPelsPerMeter;
-        public Int32 biYPelsPerMeter;
-        public Int32 biClrUsed;
-        public Int32 biClrImportant;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct IconInfoStruct
-    {
-        internal bool fIcon;
-        internal Int32 xHotspot;
-        internal Int32 yHotspot;
-        internal IntPtr hbmMask;
-        internal IntPtr hbmColor;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct CursorInfoStruct
-    {
-        internal Int32 cbSize;
-        internal Int32 flags;
-        internal IntPtr hCursor;
-        internal PointStruct ptScreenPos;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct PointStruct
-    {
-        internal int X;
-        internal int Y;
-    }
-
-    internal enum DwmWindowAttribute
-    {
-        NonClientRenderingEnabled = 1,
-        NonClientRenderingPolicy,
-        TransitionsForceDisabled,
-        AllowNonClientPaint,
-        CaptionButtonBounds,
-        NonClientRtlLayout,
-        ForceIconicRepresentation,
-        Flip3DPolicy,
-        ExtendedFrameBounds,
-        HasIconicBitmap,
-        DisallowPeek,
-        ExcludedFromPeek,
-        Last
-    }
-
     internal static class WindowsApi
     {
         internal struct DWM_COLORIZATION_PARAMS
@@ -130,14 +35,6 @@ namespace AeroShot
             public uint clrBlurBalance;
             public uint clrGlassReflectionIntensity;
             public bool fOpaque;
-        }
-
-        internal enum DeviceCap
-        {
-            VERTRES = 10,
-            DESKTOPVERTRES = 117,
-
-            // http://pinvoke.net/default.aspx/gdi32/GetDeviceCaps.html
         }
 
         internal static HWND FindWindow(string lpClassName, string lpWindowName)
@@ -201,7 +98,5 @@ namespace AeroShot
 
         [DllImport("dwmapi.dll", EntryPoint = "#104")]
         public static extern int DwmpSetColorization(UInt32 ColorizationColor, bool ColorizationOpaqueBlend, UInt32 Opacity);
-
-
     }
 }
