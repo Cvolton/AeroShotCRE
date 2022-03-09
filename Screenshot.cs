@@ -46,7 +46,7 @@ namespace AeroShot
         public int CanvasX;
         public int CanvasY;
         public bool DisableShadow;
-        public IntPtr WindowHandle;
+        public HWND WindowHandle;
         public bool SaveActiveDark;
         public bool SaveActiveLight;
         public bool SaveActiveTransparent;
@@ -56,7 +56,7 @@ namespace AeroShot
         public bool CropMode;
         public bool SaveMask;
 
-        public ScreenshotTask(IntPtr window, bool clipboard, string file,
+        public ScreenshotTask(HWND window, bool clipboard, string file,
                               bool resize, int resizeX, int resizeY,
                               bool customGlass, Color aeroColor,
                               bool mouse, bool clearType, bool shadow,
@@ -133,7 +133,8 @@ namespace AeroShot
                     if (data.DisableClearType && ClearTypeEnabled())
                     {
                         WindowsApi.SystemParametersInfo(SPI_SETFONTSMOOTHINGTYPE, 0, FE_FONTSMOOTHINGSTANDARD, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-                        WindowsApi.RedrawWindow(data.WindowHandle, IntPtr.Zero, IntPtr.Zero, RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+                        WindowsApi.RedrawWindow(data.WindowHandle, null, IntPtr.Zero, 
+                            User32.RedrawWindowFlags.RDW_FRAME | User32.RedrawWindowFlags.RDW_INVALIDATE | User32.RedrawWindowFlags.RDW_UPDATENOW | User32.RedrawWindowFlags.RDW_ALLCHILDREN);
                         ClearTypeToggled = true;
                     }
                     WindowsApi.SetForegroundWindow(data.WindowHandle);
@@ -218,7 +219,8 @@ namespace AeroShot
                     if (ClearTypeToggled)
                     {
                         WindowsApi.SystemParametersInfo(SPI_SETFONTSMOOTHINGTYPE, 0, FE_FONTSMOOTHINGCLEARTYPE, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-                        WindowsApi.RedrawWindow(data.WindowHandle, IntPtr.Zero, IntPtr.Zero, RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+                        WindowsApi.RedrawWindow(data.WindowHandle, null, IntPtr.Zero, 
+                            User32.RedrawWindowFlags.RDW_FRAME | User32.RedrawWindowFlags.RDW_INVALIDATE | User32.RedrawWindowFlags.RDW_UPDATENOW | User32.RedrawWindowFlags.RDW_ALLCHILDREN);
                     }
 
                     if (ShadowToggled)

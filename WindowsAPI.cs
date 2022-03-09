@@ -140,44 +140,34 @@ namespace AeroShot
             // http://pinvoke.net/default.aspx/gdi32/GetDeviceCaps.html
         }
 
-        [DllImport("user32.dll")]
-        internal static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+        internal static HWND FindWindow(string lpClassName, string lpWindowName)
+            => User32.FindWindow(lpClassName, lpWindowName);
 
-        [DllImport("user32.dll")]
-        internal static extern bool SetForegroundWindow(IntPtr hWnd);
+        internal static bool SetForegroundWindow(HWND hWnd) => User32.SetForegroundWindow(hWnd);
 
-        [DllImport("user32.dll")]
-        internal static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        internal static bool ShowWindow(HWND hWnd, ShowWindowCommand nCmdShow) => User32.ShowWindow(hWnd, nCmdShow);
 
-        [DllImport("user32.dll")]
-        internal static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int width, int height, uint uFlags);
+        internal static bool SetWindowPos(HWND hWnd, HWND hWndInsertAfter,
+            int x, int y, int width, int height, User32.SetWindowPosFlags uFlags)
+            => User32.SetWindowPos(hWnd, hWndInsertAfter, x, y, width, height, uFlags);
 
-        [DllImport("user32.dll")]
-        internal static extern bool GetWindowRect(IntPtr hWnd, ref WindowsRect rect);
-        [DllImport("user32.dll")]
-        internal static extern long GetWindowLong(IntPtr hWnd, int nIndex);
+        internal static bool GetWindowRect(HWND hWnd, out RECT rect) => User32.GetWindowRect(hWnd, out rect);
 
-        [DllImport("user32.dll")]
-        internal static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+        internal static long GetWindowLong(HWND hWnd, User32.WindowLongFlags nIndex) =>
+            User32.GetWindowLong(hWnd, nIndex);
 
-        [DllImport("user32.dll")]
-        internal static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+        internal static HWND GetWindow(HWND hWnd, uint uCmd) => User32.GetWindow(hWnd, uCmd);
 
-        [DllImport("user32.dll")]
-        internal static extern int GetWindowTextLength(IntPtr hWnd);
+        internal static int GetWindowText(HWND hWnd, StringBuilder lpString, int nMaxCount) =>
+            User32.GetWindowText(hWnd, lpString, nMaxCount);
 
-        [DllImport("user32.dll")]
-        internal static extern IntPtr GetForegroundWindow();
+        internal static int GetWindowTextLength(HWND hWnd) => User32.GetWindowTextLength(hWnd);
 
+        internal static HWND GetForegroundWindow() => User32.GetForegroundWindow();
+        internal static bool RegisterHotKey(HWND hWnd, int id, int fsModifiers, int vlc)
+            => User32.RegisterHotKey(hWnd, id, (User32.HotKeyModifiers) fsModifiers, (uint) vlc);
 
-
-
-
-        [DllImport("user32.dll")]
-        internal static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, int vlc);
-
-        [DllImport("user32.dll")]
-        internal static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+        internal static bool UnregisterHotKey(HWND hWnd, int id) => User32.UnregisterHotKey(hWnd, id);
 
         [DllImport("user32.dll")]
         internal static extern bool SystemParametersInfo(uint uiAction, uint uiParam, ref int pvParam, uint fWinIni);
@@ -189,11 +179,10 @@ namespace AeroShot
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool SystemParametersInfo(uint uiAction, uint uiParam, bool pvParam, uint fWinIni);
 
-        [DllImport("user32.dll")]
-        internal static extern bool RedrawWindow(IntPtr hWnd, IntPtr lpRectUpdate, IntPtr hrgnUpdate, UInt32 flags);
+        internal static bool RedrawWindow(HWND hWnd, PRECT lpRectUpdate, IntPtr hrgnUpdate, User32.RedrawWindowFlags flags)
+            => User32.RedrawWindow(hWnd, lpRectUpdate, hrgnUpdate, flags);
 
-        [DllImport("user32.dll")]
-        internal static extern int GetDpiForWindow(IntPtr hWnd);
+        internal static uint GetDpiForWindow(HWND hWnd) => User32.GetDpiForWindow(hWnd);
 
         [DllImport("dwmapi.dll")]
         internal static extern int DwmIsCompositionEnabled(out bool enabled);
