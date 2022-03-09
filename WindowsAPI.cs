@@ -221,28 +221,6 @@ namespace AeroShot
         [DllImport("dwmapi.dll", EntryPoint = "#104")]
         public static extern int DwmpSetColorization(UInt32 ColorizationColor, bool ColorizationOpaqueBlend, UInt32 Opacity);
 
-        [DllImport("gdi32.dll")]
-        internal static extern bool BitBlt(IntPtr hdcDest, int xDest, int yDest, int wDest, int hDest, IntPtr hdcSource, int xSrc, int ySrc, CopyPixelOperation rop);
 
-        [DllImport("gdi32.dll")]
-        internal static extern IntPtr CreateDC(string lpszDriver, string lpszDevice, string lpszOutput, int lpInitData);
-
-        [DllImport("gdi32.dll")]
-        internal static extern IntPtr DeleteDC(IntPtr hDc);
-
-        [DllImport("gdi32.dll")]
-        internal static extern int SaveDC(IntPtr hdc);
-
-        [DllImport("gdi32.dll")]
-        internal static extern IntPtr DeleteObject(IntPtr hDc);
-
-        [DllImport("gdi32.dll")]
-        internal static extern IntPtr CreateCompatibleBitmap(IntPtr hdc, int nWidth, int nHeight);
-
-        [DllImport("gdi32.dll")]
-        internal static extern IntPtr CreateCompatibleDC(IntPtr hdc);
-
-        [DllImport("gdi32.dll")]
-        internal static extern IntPtr SelectObject(IntPtr hdc, IntPtr bmp);
     }
 }

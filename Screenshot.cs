@@ -759,23 +759,15 @@ namespace AeroShot
 
         private static Bitmap CaptureScreenRegion(Rectangle crop)
         {
-            Rectangle totalSize = Rectangle.Empty;
-
-            foreach (Screen s in Screen.AllScreens)
-                totalSize = Rectangle.Union(totalSize, s.Bounds);
-
-            IntPtr hSrc = WindowsApi.CreateDC("DISPLAY", null, null, 0);
-            IntPtr hDest = WindowsApi.CreateCompatibleDC(hSrc);
-            IntPtr hBmp = WindowsApi.CreateCompatibleBitmap(hSrc, crop.Right - crop.Left, crop.Bottom - crop.Top);
-            IntPtr hOldBmp = WindowsApi.SelectObject(hDest, hBmp);
-            WindowsApi.BitBlt(hDest, 0, 0, crop.Right - crop.Left, crop.Bottom - crop.Top, hSrc, crop.Left, crop.Top, CopyPixelOperation.SourceCopy | CopyPixelOperation.CaptureBlt);
-            Bitmap bmp = Image.FromHbitmap(hBmp);
-            WindowsApi.SelectObject(hDest, hOldBmp);
-            WindowsApi.DeleteObject(hBmp);
-            WindowsApi.DeleteDC(hDest);
-            WindowsApi.DeleteDC(hSrc);
-
-            return bmp.Clone(new Rectangle(0, 0, bmp.Width, bmp.Height), PixelFormat.Format24bppRgb);
+            var src = Gdi32.CreateDC("DISPLAY");
+            var dest = Gdi32.CreateCompatibleDC(src);
+            var hbitmap = Gdi32.CreateCompatibleBitmap(src, crop.Width, crop.Height);
+            var old = Gdi32.SelectObject(dest, hbitmap);
+            Gdi32.BitBlt(dest, 0, 0, crop.Width, crop.Height, src, crop.X, crop.Y,
+                Gdi32.RasterOperationMode.SRCCOPY | Gdi32.RasterOperationMode.CAPTUREBLT);
+            var bmp = hbitmap.ToBitmap();
+            Gdi32.SelectObject(dest, old);
+            return bmp.Clone(new Rectangle(Point.Empty, bmp.Size), PixelFormat.Format24bppRgb);
         }
 
         private static unsafe Bitmap GenerateChecker(int s)
