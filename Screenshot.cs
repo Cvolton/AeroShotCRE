@@ -26,6 +26,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using Vanara.PInvoke;
 
 namespace AeroShot
 {
@@ -114,8 +115,8 @@ namespace AeroShot
 
         internal static void CaptureWindow(ref ScreenshotTask data)
         {
-            IntPtr start = WindowsApi.FindWindow("Button", "Start");
-            IntPtr taskbar = WindowsApi.FindWindow("Shell_TrayWnd", null);
+            var start = WindowsApi.FindWindow("Button", "Start");
+            var taskbar = WindowsApi.FindWindow("Shell_TrayWnd", null);
             if (data.ClipboardNotDisk || Directory.Exists(data.DiskSaveDirectory))
             {
                 try
@@ -186,7 +187,7 @@ namespace AeroShot
                         ShadowToggled = true;
                     }
 
-                    var r = new WindowsRect(0);
+                    var r = RECT.Empty;
                     if (data.DoResize)
                     {
                         SmartResizeWindow(ref data, out r);
@@ -229,8 +230,8 @@ namespace AeroShot
                     if (data.WindowHandle != start &&
                         data.WindowHandle != taskbar)
                     {
-                        WindowsApi.ShowWindow(start, 1);
-                        WindowsApi.ShowWindow(taskbar, 1);
+                        WindowsApi.ShowWindow(start, ShowWindowCommand.SW_NORMAL);
+                        WindowsApi.ShowWindow(taskbar, ShowWindowCommand.SW_NORMAL);
                     }
 
                     if (s == null || s[0] == null)
@@ -328,9 +329,9 @@ namespace AeroShot
 
                     if (data.DoResize)
                     {
-                        if ((WindowsApi.GetWindowLong(data.WindowHandle, GWL_STYLE) & WS_SIZEBOX) == WS_SIZEBOX)
+                        if ((WindowsApi.GetWindowLong(data.WindowHandle, User32.WindowLongFlags.GWL_STYLE) & WS_SIZEBOX) == WS_SIZEBOX)
                         {
-                            WindowsApi.SetWindowPos(data.WindowHandle, (IntPtr)0, r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top, SWP_SHOWWINDOW);
+                            WindowsApi.SetWindowPos(data.WindowHandle, (IntPtr)0, r.X, r.Y, r.Width, r.Height, User32.SetWindowPosFlags.SWP_SHOWWINDOW);
                         }
                     }
                 }
@@ -338,8 +339,8 @@ namespace AeroShot
                 {
                     if (data.WindowHandle != start && data.WindowHandle != taskbar)
                     {
-                        WindowsApi.ShowWindow(start, 1);
-                        WindowsApi.ShowWindow(taskbar, 1);
+                        WindowsApi.ShowWindow(start, ShowWindowCommand.SW_NORMAL);
+                        WindowsApi.ShowWindow(taskbar, ShowWindowCommand.SW_NORMAL);
                     }
 
                     MessageBox.Show("An error occurred while trying to take a screenshot.\r\n\r\nPlease make sure you have selected a valid window.\r\n\r\n" + e.ToString(),
@@ -391,25 +392,24 @@ namespace AeroShot
             }
         }
 
-        private static void SmartResizeWindow(ref ScreenshotTask data, out WindowsRect oldWindowSize)
+        private static void SmartResizeWindow(ref ScreenshotTask data, out RECT oldWindowSize)
         {
-            oldWindowSize = new WindowsRect(0);
-            if ((WindowsApi.GetWindowLong(data.WindowHandle, GWL_STYLE) & WS_SIZEBOX) != WS_SIZEBOX)
+            oldWindowSize = RECT.Empty;
+            if ((WindowsApi.GetWindowLong(data.WindowHandle, User32.WindowLongFlags.GWL_STYLE) & WS_SIZEBOX) != WS_SIZEBOX)
                 return;
 
-            var r = new WindowsRect();
-            WindowsApi.GetWindowRect(data.WindowHandle, ref r);
+            WindowsApi.GetWindowRect(data.WindowHandle, out var r);
             oldWindowSize = r;
 
             Bitmap f = CaptureCompositeScreenshot(ref data)[0];
             if (f != null)
             {
-                WindowsApi.SetWindowPos(data.WindowHandle, (IntPtr)0, r.Left, r.Top, data.ResizeX - (f.Width - (r.Right - r.Left)), data.ResizeY - (f.Height - (r.Bottom - r.Top)), SWP_SHOWWINDOW);
+                WindowsApi.SetWindowPos(data.WindowHandle, (IntPtr)0, r.X, r.Y, data.ResizeX - (f.Width - (r.Width)), data.ResizeY - (f.Height - r.Height), User32.SetWindowPosFlags.SWP_SHOWWINDOW);
                 f.Dispose();
             }
             else
             {
-                WindowsApi.SetWindowPos(data.WindowHandle, (IntPtr)0, r.Left, r.Top, data.ResizeX, data.ResizeY, SWP_SHOWWINDOW);
+                WindowsApi.SetWindowPos(data.WindowHandle, (IntPtr)0, r.X, r.Y, data.ResizeX, data.ResizeY, User32.SetWindowPosFlags.SWP_SHOWWINDOW);
             }
         }
 
@@ -426,11 +426,12 @@ namespace AeroShot
             foreach (Screen s in Screen.AllScreens)
                 totalSize = Rectangle.Union(totalSize, s.Bounds);
 
-            var rct = new WindowsRect();
 
-            if (WindowsApi.DwmGetWindowAttribute(data.WindowHandle, DwmWindowAttribute.ExtendedFrameBounds, ref rct, sizeof(WindowsRect)) != 0)
+            if (DwmApi.DwmGetWindowAttribute(data.WindowHandle, 
+                    DwmApi.DWMWINDOWATTRIBUTE.DWMWA_EXTENDED_FRAME_BOUNDS,
+                    out RECT rct) != 0)
                 // DwmGetWindowAttribute() failed, usually means Aero is disabled so we fall back to GetWindowRect()
-                WindowsApi.GetWindowRect(data.WindowHandle, ref rct);
+                WindowsApi.GetWindowRect(data.WindowHandle, out rct);
             else
             {
                 // DwmGetWindowAttribute() succeeded
@@ -438,7 +439,7 @@ namespace AeroShot
             }
 
             // Get DPI of the window (this only works properly on Win 10 1607+) but it is not really needed until Win 11 anyway
-            int DPI = 96;
+            uint DPI = 96;
             try
             {
                 DPI = WindowsApi.GetDpiForWindow(data.WindowHandle);
@@ -450,20 +451,20 @@ namespace AeroShot
             int backdropOffset = Convert.ToInt32(100 * scalingFactor);
 
             // Add a 100px margin for window shadows. Excess transparency is trimmed out later
-            rct.Left -= backdropOffset;
-            rct.Right += backdropOffset;
-            rct.Top -= backdropOffset;
-            rct.Bottom += backdropOffset;
+            rct.left -= backdropOffset;
+            rct.right += backdropOffset;
+            rct.top -= backdropOffset;
+            rct.bottom += backdropOffset;
 
             // These next 4 checks handle if the window is outside of the visible screen
-            if (rct.Left < totalSize.Left)
-                rct.Left = totalSize.Left;
-            if (rct.Right > totalSize.Right)
-                rct.Right = totalSize.Right;
-            if (rct.Top < totalSize.Top)
-                rct.Top = totalSize.Top;
-            if (rct.Bottom > totalSize.Bottom)
-                rct.Bottom = totalSize.Bottom;
+            if (rct.left < totalSize.Left)
+                rct.left = totalSize.Left;
+            if (rct.right > totalSize.Right)
+                rct.right = totalSize.Right;
+            if (rct.top < totalSize.Top)
+                rct.top = totalSize.Top;
+            if (rct.bottom > totalSize.Bottom)
+                rct.bottom = totalSize.Bottom;
 
             // Spawning backdrop
             // Handling as much as possible in the constructor makes this easier to render, which makes capture less likely to fail on underpowered PCs
@@ -474,31 +475,34 @@ namespace AeroShot
                 FormBorderStyle = FormBorderStyle.None,
                 ShowInTaskbar = false,
                 //Opacity = 0,
-                Size = new Size(rct.Right - rct.Left, rct.Bottom - rct.Top),
+                Size = rct.Size,
                 StartPosition = FormStartPosition.Manual,
-                Location = new Point(rct.Left, rct.Top)
-
+                Location = rct.Location
             };
 
-            WindowsApi.ShowWindow(backdrop.Handle, 4);
-            if (!WindowsApi.SetWindowPos(backdrop.Handle, data.WindowHandle, rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top, SWP_NOACTIVATE))
-			{
+            WindowsApi.ShowWindow(backdrop.Handle, ShowWindowCommand.SW_SHOWNOACTIVATE);
+            if (!WindowsApi.SetWindowPos(backdrop.Handle, data.WindowHandle, rct.X, rct.Y, rct.Width,
+                    rct.Height, User32.SetWindowPosFlags.SWP_NOACTIVATE))
+            {
                 // We are unable to put backdrop directly behind the window, so we will put it into the foreground and then put the original window on top of it
                 // This likely happens because the program we're trying to capture is running as administrator
-                WindowsApi.SetWindowPos(backdrop.Handle, IntPtr.Zero, rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top, SWP_NOACTIVATE);
-                WindowsApi.SetForegroundWindow(data.WindowHandle).ToString();
+                WindowsApi.SetWindowPos(backdrop.Handle, IntPtr.Zero, rct.X, rct.Y, rct.Width,
+                    rct.Height, User32.SetWindowPosFlags.SWP_NOACTIVATE);
+                WindowsApi.SetForegroundWindow(data.WindowHandle);
             }
 
             RefreshBackdrop();
             
+            var crop = new Rectangle(rct.X, rct.Y, rct.Width, rct.Height);
+
             // Capture screenshot with white background
-			Bitmap whiteShot = CaptureScreenRegion(new Rectangle(rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top));
+            Bitmap whiteShot = CaptureScreenRegion(crop);
 
 			backdrop.BackColor = Color.Black;
             RefreshBackdrop();
 
             // Capture screenshot with black background
-            Bitmap blackShot = CaptureScreenRegion(new Rectangle(rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top));
+            Bitmap blackShot = CaptureScreenRegion(crop);
 
             Bitmap transparentImage;
             Bitmap transparentInactiveImage = null;
@@ -555,11 +559,11 @@ namespace AeroShot
 
                 backdrop.BackColor = Color.White;
                 RefreshBackdrop();
-                Bitmap whiteMaskShot = CaptureScreenRegion(new Rectangle(rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top));
+                Bitmap whiteMaskShot = CaptureScreenRegion(crop);
 
                 backdrop.BackColor = Color.Black;
                 RefreshBackdrop();
-                Bitmap blackMaskShot = CaptureScreenRegion(new Rectangle(rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top));
+                Bitmap blackMaskShot = CaptureScreenRegion(crop);
 
                 transparentMaskImage = CreateMask(DifferentiateAlpha(whiteMaskShot, blackMaskShot, false), minAlpha);
 
@@ -618,11 +622,11 @@ namespace AeroShot
 
                     backdrop.BackColor = Color.White;
                     RefreshBackdrop();
-                    Bitmap whiteTransparentShot = CaptureScreenRegion(new Rectangle(rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top));
+                    Bitmap whiteTransparentShot = CaptureScreenRegion(crop);
 
                     backdrop.BackColor = Color.Black;
                     RefreshBackdrop();
-                    Bitmap blackTransparentShot = CaptureScreenRegion(new Rectangle(rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top));
+                    Bitmap blackTransparentShot = CaptureScreenRegion(crop);
 
                     transparentTransparentImage = DifferentiateAlpha(whiteTransparentShot, blackTransparentShot, false);
                     whiteTransparentShot.Dispose();
@@ -651,8 +655,8 @@ namespace AeroShot
                 Opacity = 0,
             };
 
-            WindowsApi.ShowWindow(emptyForm.Handle, 5);
-            WindowsApi.SetWindowPos(emptyForm.Handle, data.WindowHandle, rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top, 0);
+            WindowsApi.ShowWindow(emptyForm.Handle, ShowWindowCommand.SW_SHOW);
+            WindowsApi.SetWindowPos(emptyForm.Handle, data.WindowHandle, rct.X, rct.Y, rct.Width, rct.Height, 0);
             WindowsApi.SetForegroundWindow(emptyForm.Handle);
 
             // Capture inactive screenshots
@@ -662,13 +666,13 @@ namespace AeroShot
                 RefreshBackdrop();
 
                 // Capture inactive screenshot with white background
-                Bitmap whiteInactiveShot = CaptureScreenRegion(new Rectangle(rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top));
+                Bitmap whiteInactiveShot = CaptureScreenRegion(crop);
 
                 backdrop.BackColor = Color.Black;
                 RefreshBackdrop();
 
                 // Capture inactive screenshot with black background
-                Bitmap blackInactiveShot = CaptureScreenRegion(new Rectangle(rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top));
+                Bitmap blackInactiveShot = CaptureScreenRegion(crop);
 
 
                 if (data.SaveInactiveDark) transparentInactiveImage = DifferentiateAlpha(whiteInactiveShot, blackInactiveShot, false);
@@ -698,11 +702,11 @@ namespace AeroShot
 
                     backdrop.BackColor = Color.White;
                     RefreshBackdrop();
-                    Bitmap whiteTransparentInactiveShot = CaptureScreenRegion(new Rectangle(rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top));
+                    Bitmap whiteTransparentInactiveShot = CaptureScreenRegion(crop);
 
                     backdrop.BackColor = Color.Black;
                     RefreshBackdrop();
-                    Bitmap blackTransparentInactiveShot = CaptureScreenRegion(new Rectangle(rct.Left, rct.Top, rct.Right - rct.Left, rct.Bottom - rct.Top));
+                    Bitmap blackTransparentInactiveShot = CaptureScreenRegion(crop);
 
                     transparentTransparentInactiveImage = DifferentiateAlpha(whiteTransparentInactiveShot, blackTransparentInactiveShot, false);
                     whiteTransparentInactiveShot.Dispose();

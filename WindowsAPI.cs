@@ -20,6 +20,7 @@ using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
+using Vanara.PInvoke;
 
 namespace AeroShot
 {
@@ -120,21 +121,6 @@ namespace AeroShot
 
     internal static class WindowsApi
     {
-        // Safe method of calling dwmapi.dll, for versions of Windows lower than Vista
-        internal static int DwmGetWindowAttribute(IntPtr hWnd, DwmWindowAttribute dwAttribute, ref WindowsRect pvAttribute, int cbAttribute)
-        {
-            IntPtr dwmDll = LoadLibrary("dwmapi.dll");
-            if (dwmDll == IntPtr.Zero)
-                return Marshal.GetLastWin32Error();
-            IntPtr dwmFunction = GetProcAddress(dwmDll, "DwmGetWindowAttribute");
-            if (dwmFunction == IntPtr.Zero)
-                return Marshal.GetLastWin32Error();
-            var call = (DwmGetWindowAttributeDelegate)Marshal.GetDelegateForFunctionPointer(dwmFunction, typeof(DwmGetWindowAttributeDelegate));
-            int result = call(hWnd, dwAttribute, ref pvAttribute, cbAttribute);
-            FreeLibrary(dwmDll);
-            return result;
-        }
-
         internal struct DWM_COLORIZATION_PARAMS
         {
             public uint clrColor;
@@ -258,17 +244,5 @@ namespace AeroShot
 
         [DllImport("gdi32.dll")]
         internal static extern IntPtr SelectObject(IntPtr hdc, IntPtr bmp);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool FreeLibrary(IntPtr hModule);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr LoadLibrary(string dllToLoad);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr GetProcAddress(IntPtr hModule, string procedureName);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int DwmGetWindowAttributeDelegate(IntPtr hWnd, DwmWindowAttribute dwAttribute, ref WindowsRect pvAttribute, int cbAttribute);
     }
 }
