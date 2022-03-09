@@ -731,29 +731,29 @@ namespace AeroShot
             return final;
         }
 
-        private static void DrawCursorToBitmap(Bitmap windowImage, Point offsetLocation)
+        private static void DrawCursorToBitmap(Image windowImage, Point offsetLocation)
         {
-            var ci = new CursorInfoStruct();
-            ci.cbSize = Marshal.SizeOf(ci);
-            if (WindowsApi.GetCursorInfo(out ci))
+            // TODO: Fix mouse offset
+            var ci = new User32.CURSORINFO();
+            ci.cbSize = (uint) Marshal.SizeOf(ci);
+            if (User32.GetCursorInfo(ref ci))
             {
-                if (ci.flags == 1)
+                if (ci.flags == User32.CursorState.CURSOR_SHOWING)
                 {
-                    IntPtr hicon = WindowsApi.CopyIcon(ci.hCursor);
-                    IconInfoStruct icInfo;
-                    if (WindowsApi.GetIconInfo(hicon, out icInfo))
-                    {
-                        var loc = new Point(ci.ptScreenPos.X - offsetLocation.X - icInfo.xHotspot, ci.ptScreenPos.Y - offsetLocation.Y - icInfo.yHotspot);
-                        Icon ic = Icon.FromHandle(hicon);
-                        Bitmap bmp = ic.ToBitmap();
+                    var hicon = User32.CopyCursor(ci.hCursor);
+                    var cursor = new Cursor(hicon.DangerousGetHandle());
 
-                        Graphics g = Graphics.FromImage(windowImage);
-                        g.DrawImage(bmp, new Rectangle(loc, bmp.Size));
-                        g.Dispose();
-                        WindowsApi.DestroyIcon(hicon);
-                        bmp.Dispose();
+                    var loc = ci.ptScreenPos - (Size) offsetLocation;
+                    
+                    using (var g = Graphics.FromImage(windowImage))
+                    {
+                        cursor.Draw(g,new Rectangle(loc, cursor.Size));
                     }
                 }
+            }
+            else
+            {
+                throw new Exception("Can't get cursor info");
             }
         }
 

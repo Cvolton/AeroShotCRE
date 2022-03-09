@@ -169,17 +169,9 @@ namespace AeroShot
         [DllImport("user32.dll")]
         internal static extern IntPtr GetForegroundWindow();
 
-        [DllImport("user32.dll")]
-        public static extern bool GetCursorInfo(out CursorInfoStruct pci);
 
-        [DllImport("user32.dll")]
-        public static extern IntPtr DestroyIcon(IntPtr hIcon);
 
-        [DllImport("user32.dll")]
-        public static extern IntPtr CopyIcon(IntPtr hIcon);
 
-        [DllImport("user32.dll")]
-        public static extern bool GetIconInfo(IntPtr hIcon, out IconInfoStruct piconinfo);
 
         [DllImport("user32.dll")]
         internal static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, int vlc);
