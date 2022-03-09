@@ -93,25 +93,8 @@ namespace AeroShot
 
     internal static class Screenshot
     {
-        private const uint SWP_NOACTIVATE = 0x0010;
-        private const int GWL_STYLE = -16;
-        private const long WS_SIZEBOX = 0x00040000L;
-        private const uint SWP_SHOWWINDOW = 0x0040;
-
-        private const uint SPI_GETFONTSMOOTHING = 0x004A;
-        private const uint SPI_GETFONTSMOOTHINGTYPE = 0x200A;
-        private const uint SPI_SETFONTSMOOTHINGTYPE = 0x200B;
         private const uint FE_FONTSMOOTHINGCLEARTYPE = 0x2;
         private const uint FE_FONTSMOOTHINGSTANDARD = 0x1;
-        private const uint SPIF_UPDATEINIFILE = 0x1;
-        private const uint SPIF_SENDCHANGE = 0x2;
-
-        private static uint SPI_SETDROPSHADOW = 0x1025;
-
-        private const uint RDW_FRAME = 0x0400;
-        private const uint RDW_INVALIDATE = 0x0001;
-        private const uint RDW_UPDATENOW = 0x0100;
-        private const uint RDW_ALLCHILDREN = 0x0080;
 
         internal static void CaptureWindow(ref ScreenshotTask data)
         {
@@ -132,7 +115,7 @@ namespace AeroShot
                     bool ClearTypeToggled = false;
                     if (data.DisableClearType && ClearTypeEnabled())
                     {
-                        WindowsApi.SystemParametersInfo(SPI_SETFONTSMOOTHINGTYPE, 0, FE_FONTSMOOTHINGSTANDARD, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+                        WindowsApi.SystemParametersInfo((uint) User32.SPI.SPI_SETFONTSMOOTHINGTYPE, 0, FE_FONTSMOOTHINGSTANDARD, (uint) User32.SPIF.SPIF_UPDATEINIFILE | (uint) User32.SPIF.SPIF_SENDCHANGE);
                         User32.RedrawWindow(data.WindowHandle, null, IntPtr.Zero, User32.RedrawWindowFlags.RDW_FRAME | User32.RedrawWindowFlags.RDW_INVALIDATE | User32.RedrawWindowFlags.RDW_UPDATENOW | User32.RedrawWindowFlags.RDW_ALLCHILDREN);
                         ClearTypeToggled = true;
                     }
@@ -183,7 +166,7 @@ namespace AeroShot
 					bool ShadowToggled = false;
                     if (data.DisableShadow && ShadowEnabled())
                     {
-                        WindowsApi.SystemParametersInfo(SPI_SETDROPSHADOW, 0, false, 0);
+                        WindowsApi.SystemParametersInfo((uint) User32.SPI.SPI_SETDROPSHADOW, 0, false, 0);
                         ShadowToggled = true;
                     }
 
@@ -217,13 +200,13 @@ namespace AeroShot
 
                     if (ClearTypeToggled)
                     {
-                        WindowsApi.SystemParametersInfo(SPI_SETFONTSMOOTHINGTYPE, 0, FE_FONTSMOOTHINGCLEARTYPE, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+                        WindowsApi.SystemParametersInfo((uint) User32.SPI.SPI_SETFONTSMOOTHINGTYPE, 0, FE_FONTSMOOTHINGCLEARTYPE, (uint) User32.SPIF.SPIF_UPDATEINIFILE | (uint) User32.SPIF.SPIF_SENDCHANGE);
                         User32.RedrawWindow(data.WindowHandle, null, IntPtr.Zero, User32.RedrawWindowFlags.RDW_FRAME | User32.RedrawWindowFlags.RDW_INVALIDATE | User32.RedrawWindowFlags.RDW_UPDATENOW | User32.RedrawWindowFlags.RDW_ALLCHILDREN);
                     }
 
                     if (ShadowToggled)
                     {
-                        WindowsApi.SystemParametersInfo(SPI_SETDROPSHADOW, 0, true, 0);
+                        WindowsApi.SystemParametersInfo((uint) User32.SPI.SPI_SETDROPSHADOW, 0, true, 0);
                     }
 
                     // Show the taskbar again
@@ -329,7 +312,7 @@ namespace AeroShot
 
                     if (data.DoResize)
                     {
-                        if ((User32.GetWindowLong(data.WindowHandle, User32.WindowLongFlags.GWL_STYLE) & WS_SIZEBOX) == WS_SIZEBOX)
+                        if ((User32.GetWindowLong(data.WindowHandle, User32.WindowLongFlags.GWL_STYLE) & (long) User32.WindowStyles.WS_SIZEBOX) == (long) User32.WindowStyles.WS_SIZEBOX)
                         {
                             HWND hWndInsertAfter = (IntPtr)0;
                             User32.SetWindowPos(data.WindowHandle, hWndInsertAfter, r.X, r.Y, r.Width, r.Height, User32.SetWindowPosFlags.SWP_SHOWWINDOW);
@@ -377,11 +360,11 @@ namespace AeroShot
         {
             int sv = 0;
             /* Call to systemparametersinfo to get the font smoothing value. */
-            WindowsApi.SystemParametersInfo(SPI_GETFONTSMOOTHING, 0, ref sv, 0);
+            WindowsApi.SystemParametersInfo((uint) User32.SPI.SPI_GETFONTSMOOTHING, 0, ref sv, 0);
 
             int stv = 0;
             /* Call to systemparametersinfo to get the font smoothing Type value. */
-            WindowsApi.SystemParametersInfo(SPI_GETFONTSMOOTHINGTYPE, 0, ref stv, 0);
+            WindowsApi.SystemParametersInfo((uint) User32.SPI.SPI_GETFONTSMOOTHINGTYPE, 0, ref stv, 0);
 
             if (sv > 0 && stv == 2) //if smoothing is on, and is set to cleartype
             {
@@ -396,7 +379,7 @@ namespace AeroShot
         private static void SmartResizeWindow(ref ScreenshotTask data, out RECT oldWindowSize)
         {
             oldWindowSize = RECT.Empty;
-            if ((User32.GetWindowLong(data.WindowHandle, User32.WindowLongFlags.GWL_STYLE) & WS_SIZEBOX) != WS_SIZEBOX)
+            if ((User32.GetWindowLong(data.WindowHandle, User32.WindowLongFlags.GWL_STYLE) & (long) User32.WindowStyles.WS_SIZEBOX) != (long) User32.WindowStyles.WS_SIZEBOX)
                 return;
 
             User32.GetWindowRect(data.WindowHandle, out var r);
@@ -556,7 +539,7 @@ namespace AeroShot
                 }
                 else if(ShadowEnabled())
                 {
-                    WindowsApi.SystemParametersInfo(SPI_SETDROPSHADOW, 0, false, 0);
+                    WindowsApi.SystemParametersInfo((uint) User32.SPI.SPI_SETDROPSHADOW, 0, false, 0);
                     ShadowToggled = true;
                 }
 
@@ -572,7 +555,7 @@ namespace AeroShot
 
                 if (ShadowToggled)
                 {
-                    WindowsApi.SystemParametersInfo(SPI_SETDROPSHADOW, 0, true, 0);
+                    WindowsApi.SystemParametersInfo((uint) User32.SPI.SPI_SETDROPSHADOW, 0, true, 0);
                 }
 
                 if (ColorToggled)
