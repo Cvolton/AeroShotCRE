@@ -115,8 +115,8 @@ namespace AeroShot
 
         internal static void CaptureWindow(ref ScreenshotTask data)
         {
-            var start = WindowsApi.FindWindow("Button", "Start");
-            var taskbar = WindowsApi.FindWindow("Shell_TrayWnd", null);
+            var start = User32.FindWindow("Button", "Start");
+            var taskbar = User32.FindWindow("Shell_TrayWnd", null);
             if (data.ClipboardNotDisk || Directory.Exists(data.DiskSaveDirectory))
             {
                 try
@@ -125,19 +125,18 @@ namespace AeroShot
                     if (data.WindowHandle != start &&
                         data.WindowHandle != taskbar)
                     {
-                        WindowsApi.ShowWindow(start, 0);
-                        WindowsApi.ShowWindow(taskbar, 0);
+                        User32.ShowWindow(start, 0);
+                        User32.ShowWindow(taskbar, 0);
                         Application.DoEvents();
                     }
                     bool ClearTypeToggled = false;
                     if (data.DisableClearType && ClearTypeEnabled())
                     {
                         WindowsApi.SystemParametersInfo(SPI_SETFONTSMOOTHINGTYPE, 0, FE_FONTSMOOTHINGSTANDARD, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-                        WindowsApi.RedrawWindow(data.WindowHandle, null, IntPtr.Zero, 
-                            User32.RedrawWindowFlags.RDW_FRAME | User32.RedrawWindowFlags.RDW_INVALIDATE | User32.RedrawWindowFlags.RDW_UPDATENOW | User32.RedrawWindowFlags.RDW_ALLCHILDREN);
+                        User32.RedrawWindow(data.WindowHandle, null, IntPtr.Zero, User32.RedrawWindowFlags.RDW_FRAME | User32.RedrawWindowFlags.RDW_INVALIDATE | User32.RedrawWindowFlags.RDW_UPDATENOW | User32.RedrawWindowFlags.RDW_ALLCHILDREN);
                         ClearTypeToggled = true;
                     }
-                    WindowsApi.SetForegroundWindow(data.WindowHandle);
+                    User32.SetForegroundWindow(data.WindowHandle);
 
 					bool AeroColorToggled = false;
                     uint ColorizationColor = 0;
@@ -152,24 +151,24 @@ namespace AeroShot
                             {
                                 if (VersionHelpers.IsWindowsVista())
                                 {
-                                    WindowsApi.DwmGetColorizationColor(out ColorizationColor, out ColorizationOpaqueBlend);
+                                    DwmApi.DwmGetColorizationColor(out ColorizationColor, out ColorizationOpaqueBlend);
                                     WindowsApi.DwmpSetColorization(ColorToBgra(data.AeroColor), true, 0xFF);
                                 }
                                 else
                                 {
                                     // Original colorization parameters
-                                    WindowsApi.DwmGetColorizationParameters(out originalParameters);
+                                    DwmApi.DwmpGetColorizationParameters(out originalParameters);
 
                                     // Custom colorization parameters
                                     DwmApi.DWM_COLORIZATION_PARAMS parameters;
-                                    WindowsApi.DwmGetColorizationParameters(out parameters);
+                                    DwmApi.DwmpGetColorizationParameters(out parameters);
                                     parameters.clrAfterGlowBalance = UintToQUAD(2);
                                     parameters.clrBlurBalance = UintToQUAD(29);
                                     parameters.clrColor = data.AeroColor;
                                     parameters.nIntensity = 69;
 
                                     // Call the DwmSetColorizationParameters to make the change take effect.
-                                    WindowsApi.DwmSetColorizationParameters(ref parameters);
+                                    DwmApi.DwmpSetColorizationParameters(parameters);
                                 }
                                 AeroColorToggled = true;
                             }
@@ -195,9 +194,9 @@ namespace AeroShot
                         Thread.Sleep(100);
                     }
 
-                    int length = WindowsApi.GetWindowTextLength(data.WindowHandle);
+                    int length = User32.GetWindowTextLength(data.WindowHandle);
                     var sb = new StringBuilder(length + 1);
-                    WindowsApi.GetWindowText(data.WindowHandle, sb, sb.Capacity);
+                    User32.GetWindowText(data.WindowHandle, sb, sb.Capacity);
 
                     string name = sb.ToString();
 
@@ -213,14 +212,13 @@ namespace AeroShot
                             WindowsApi.DwmpSetColorization(ColorizationColor, ColorizationOpaqueBlend, 0xFF);
                         }
                         else
-                            WindowsApi.DwmSetColorizationParameters(ref originalParameters);
+                            DwmApi.DwmpSetColorizationParameters(originalParameters);
                     }
 
                     if (ClearTypeToggled)
                     {
                         WindowsApi.SystemParametersInfo(SPI_SETFONTSMOOTHINGTYPE, 0, FE_FONTSMOOTHINGCLEARTYPE, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
-                        WindowsApi.RedrawWindow(data.WindowHandle, null, IntPtr.Zero, 
-                            User32.RedrawWindowFlags.RDW_FRAME | User32.RedrawWindowFlags.RDW_INVALIDATE | User32.RedrawWindowFlags.RDW_UPDATENOW | User32.RedrawWindowFlags.RDW_ALLCHILDREN);
+                        User32.RedrawWindow(data.WindowHandle, null, IntPtr.Zero, User32.RedrawWindowFlags.RDW_FRAME | User32.RedrawWindowFlags.RDW_INVALIDATE | User32.RedrawWindowFlags.RDW_UPDATENOW | User32.RedrawWindowFlags.RDW_ALLCHILDREN);
                     }
 
                     if (ShadowToggled)
@@ -232,8 +230,8 @@ namespace AeroShot
                     if (data.WindowHandle != start &&
                         data.WindowHandle != taskbar)
                     {
-                        WindowsApi.ShowWindow(start, ShowWindowCommand.SW_NORMAL);
-                        WindowsApi.ShowWindow(taskbar, ShowWindowCommand.SW_NORMAL);
+                        User32.ShowWindow(start, ShowWindowCommand.SW_NORMAL);
+                        User32.ShowWindow(taskbar, ShowWindowCommand.SW_NORMAL);
                     }
 
                     if (s == null || s[0] == null)
@@ -331,9 +329,10 @@ namespace AeroShot
 
                     if (data.DoResize)
                     {
-                        if ((WindowsApi.GetWindowLong(data.WindowHandle, User32.WindowLongFlags.GWL_STYLE) & WS_SIZEBOX) == WS_SIZEBOX)
+                        if ((User32.GetWindowLong(data.WindowHandle, User32.WindowLongFlags.GWL_STYLE) & WS_SIZEBOX) == WS_SIZEBOX)
                         {
-                            WindowsApi.SetWindowPos(data.WindowHandle, (IntPtr)0, r.X, r.Y, r.Width, r.Height, User32.SetWindowPosFlags.SWP_SHOWWINDOW);
+                            HWND hWndInsertAfter = (IntPtr)0;
+                            User32.SetWindowPos(data.WindowHandle, hWndInsertAfter, r.X, r.Y, r.Width, r.Height, User32.SetWindowPosFlags.SWP_SHOWWINDOW);
                         }
                     }
                 }
@@ -341,8 +340,8 @@ namespace AeroShot
                 {
                     if (data.WindowHandle != start && data.WindowHandle != taskbar)
                     {
-                        WindowsApi.ShowWindow(start, ShowWindowCommand.SW_NORMAL);
-                        WindowsApi.ShowWindow(taskbar, ShowWindowCommand.SW_NORMAL);
+                        User32.ShowWindow(start, ShowWindowCommand.SW_NORMAL);
+                        User32.ShowWindow(taskbar, ShowWindowCommand.SW_NORMAL);
                     }
 
                     MessageBox.Show("An error occurred while trying to take a screenshot.\r\n\r\nPlease make sure you have selected a valid window.\r\n\r\n" + e.ToString(),
@@ -359,7 +358,7 @@ namespace AeroShot
         private static bool AeroEnabled()
         {
             bool aeroEnabled = true;
-            WindowsApi.DwmIsCompositionEnabled(out aeroEnabled);
+            DwmApi.DwmIsCompositionEnabled(out aeroEnabled);
             return aeroEnabled;
         }
 
@@ -397,21 +396,25 @@ namespace AeroShot
         private static void SmartResizeWindow(ref ScreenshotTask data, out RECT oldWindowSize)
         {
             oldWindowSize = RECT.Empty;
-            if ((WindowsApi.GetWindowLong(data.WindowHandle, User32.WindowLongFlags.GWL_STYLE) & WS_SIZEBOX) != WS_SIZEBOX)
+            if ((User32.GetWindowLong(data.WindowHandle, User32.WindowLongFlags.GWL_STYLE) & WS_SIZEBOX) != WS_SIZEBOX)
                 return;
 
-            WindowsApi.GetWindowRect(data.WindowHandle, out var r);
+            User32.GetWindowRect(data.WindowHandle, out var r);
             oldWindowSize = r;
 
             Bitmap f = CaptureCompositeScreenshot(ref data)[0];
             if (f != null)
             {
-                WindowsApi.SetWindowPos(data.WindowHandle, (IntPtr)0, r.X, r.Y, data.ResizeX - (f.Width - (r.Width)), data.ResizeY - (f.Height - r.Height), User32.SetWindowPosFlags.SWP_SHOWWINDOW);
+                HWND hWndInsertAfter = (IntPtr)0;
+                int width = data.ResizeX - (f.Width - (r.Width));
+                int height = data.ResizeY - (f.Height - r.Height);
+                User32.SetWindowPos(data.WindowHandle, hWndInsertAfter, r.X, r.Y, width, height, User32.SetWindowPosFlags.SWP_SHOWWINDOW);
                 f.Dispose();
             }
             else
             {
-                WindowsApi.SetWindowPos(data.WindowHandle, (IntPtr)0, r.X, r.Y, data.ResizeX, data.ResizeY, User32.SetWindowPosFlags.SWP_SHOWWINDOW);
+                HWND hWndInsertAfter = (IntPtr)0;
+                User32.SetWindowPos(data.WindowHandle, hWndInsertAfter, r.X, r.Y, data.ResizeX, data.ResizeY, User32.SetWindowPosFlags.SWP_SHOWWINDOW);
             }
         }
 
@@ -433,7 +436,7 @@ namespace AeroShot
                     DwmApi.DWMWINDOWATTRIBUTE.DWMWA_EXTENDED_FRAME_BOUNDS,
                     out RECT rct) != 0)
                 // DwmGetWindowAttribute() failed, usually means Aero is disabled so we fall back to GetWindowRect()
-                WindowsApi.GetWindowRect(data.WindowHandle, out rct);
+                User32.GetWindowRect(data.WindowHandle, out rct);
             else
             {
                 // DwmGetWindowAttribute() succeeded
@@ -444,7 +447,7 @@ namespace AeroShot
             uint DPI = 96;
             try
             {
-                DPI = WindowsApi.GetDpiForWindow(data.WindowHandle);
+                DPI = User32.GetDpiForWindow(data.WindowHandle);
             }
             catch { }
 
@@ -482,15 +485,13 @@ namespace AeroShot
                 Location = rct.Location
             };
 
-            WindowsApi.ShowWindow(backdrop.Handle, ShowWindowCommand.SW_SHOWNOACTIVATE);
-            if (!WindowsApi.SetWindowPos(backdrop.Handle, data.WindowHandle, rct.X, rct.Y, rct.Width,
-                    rct.Height, User32.SetWindowPosFlags.SWP_NOACTIVATE))
+            User32.ShowWindow(backdrop.Handle, ShowWindowCommand.SW_SHOWNOACTIVATE);
+            if (!User32.SetWindowPos(backdrop.Handle, data.WindowHandle, rct.X, rct.Y, rct.Width, rct.Height, User32.SetWindowPosFlags.SWP_NOACTIVATE))
             {
                 // We are unable to put backdrop directly behind the window, so we will put it into the foreground and then put the original window on top of it
                 // This likely happens because the program we're trying to capture is running as administrator
-                WindowsApi.SetWindowPos(backdrop.Handle, IntPtr.Zero, rct.X, rct.Y, rct.Width,
-                    rct.Height, User32.SetWindowPosFlags.SWP_NOACTIVATE);
-                WindowsApi.SetForegroundWindow(data.WindowHandle);
+                User32.SetWindowPos(backdrop.Handle, IntPtr.Zero, rct.X, rct.Y, rct.Width, rct.Height, User32.SetWindowPosFlags.SWP_NOACTIVATE);
+                User32.SetForegroundWindow(data.WindowHandle);
             }
 
             RefreshBackdrop();
@@ -530,7 +531,7 @@ namespace AeroShot
 
                 try
                 {
-                    WindowsApi.DwmIsCompositionEnabled(out isCompositing);
+                    DwmApi.DwmIsCompositionEnabled(out isCompositing);
                 }
                 catch (Exception)
                 {
@@ -544,7 +545,7 @@ namespace AeroShot
                 {
                     minAlpha = 254;
 
-                    WindowsApi.DwmGetColorizationColor(out ColorizationColor, out fOpaque);
+                    DwmApi.DwmGetColorizationColor(out ColorizationColor, out fOpaque);
 
                     if (fOpaque == false)
                     {
@@ -599,7 +600,7 @@ namespace AeroShot
                     if (VersionHelpers.IsWindowsVista())
                     {
 
-                        WindowsApi.DwmGetColorizationColor(out ColorizationColor, out fOpaque);
+                        DwmApi.DwmGetColorizationColor(out ColorizationColor, out fOpaque);
 
                         if (fOpaque == false)
                         {
@@ -609,8 +610,8 @@ namespace AeroShot
                     }
                     else
                     {
-                        WindowsApi.DwmGetColorizationParameters(out parameters);
-                        WindowsApi.DwmGetColorizationParameters(out originalParameters);
+                        DwmApi.DwmpGetColorizationParameters(out parameters);
+                        DwmApi.DwmpGetColorizationParameters(out originalParameters);
 
                         //Set custom fully transparent parameters
                         parameters.clrAfterGlowBalance = UintToQUAD(0);
@@ -618,7 +619,7 @@ namespace AeroShot
                         parameters.nIntensity = 0;
 
                         // Call the DwmSetColorizationParameters to make the change take effect.
-                        WindowsApi.DwmSetColorizationParameters(ref parameters);
+                        DwmApi.DwmpSetColorizationParameters(parameters);
                     }
                     
 
@@ -640,7 +641,7 @@ namespace AeroShot
                     }
                     else
                     {
-                        WindowsApi.DwmSetColorizationParameters(ref originalParameters);
+                        DwmApi.DwmpSetColorizationParameters(originalParameters);
                     }
                 }
                 catch (Exception)
@@ -657,9 +658,9 @@ namespace AeroShot
                 Opacity = 0,
             };
 
-            WindowsApi.ShowWindow(emptyForm.Handle, ShowWindowCommand.SW_SHOW);
-            WindowsApi.SetWindowPos(emptyForm.Handle, data.WindowHandle, rct.X, rct.Y, rct.Width, rct.Height, 0);
-            WindowsApi.SetForegroundWindow(emptyForm.Handle);
+            User32.ShowWindow(emptyForm.Handle, ShowWindowCommand.SW_SHOW);
+            User32.SetWindowPos(emptyForm.Handle, data.WindowHandle, rct.X, rct.Y, rct.Width, rct.Height, 0);
+            User32.SetForegroundWindow(emptyForm.Handle);
 
             // Capture inactive screenshots
             if (data.SaveInactiveDark || data.SaveInactiveLight)
@@ -691,8 +692,8 @@ namespace AeroShot
                 {
                     //Get original colorization parameters
                     DwmApi.DWM_COLORIZATION_PARAMS parameters, originalParameters;
-                    WindowsApi.DwmGetColorizationParameters(out parameters);
-                    WindowsApi.DwmGetColorizationParameters(out originalParameters);
+                    DwmApi.DwmpGetColorizationParameters(out parameters);
+                    DwmApi.DwmpGetColorizationParameters(out originalParameters);
 
                     //Set custom fully transparent parameters
                     parameters.clrAfterGlowBalance = UintToQUAD(0);
@@ -700,7 +701,7 @@ namespace AeroShot
                     parameters.nIntensity = 0;
 
                     // Call the DwmSetColorizationParameters to make the change take effect.
-                    WindowsApi.DwmSetColorizationParameters(ref parameters);
+                    DwmApi.DwmpSetColorizationParameters(parameters);
 
                     backdrop.BackColor = Color.White;
                     RefreshBackdrop();
@@ -714,7 +715,7 @@ namespace AeroShot
                     whiteTransparentInactiveShot.Dispose();
                     blackTransparentInactiveShot.Dispose();
 
-                    WindowsApi.DwmSetColorizationParameters(ref originalParameters);
+                    DwmApi.DwmpSetColorizationParameters(originalParameters);
                 }
                 catch (Exception)
                 {
