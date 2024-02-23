@@ -20,6 +20,7 @@ using System;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
+using Vanara.PInvoke;
 
 namespace AeroShot
 {
@@ -37,7 +38,7 @@ namespace AeroShot
         {
             _settings = new Settings();
             _windowId = new[] { GetHashCode(), GetHashCode() ^ 327 };
-            WindowsApi.RegisterHotKey(Handle, _windowId[0], _settings.hotkeyModifier, _settings.hotkeyKey);
+            User32.RegisterHotKey(Handle, _windowId[0], (User32.HotKeyModifiers) _settings.hotkeyModifier, (uint) _settings.hotkeyKey);
             //WindowsApi.RegisterHotKey(Handle, _windowId[1], MOD_ALT | MOD_CONTROL, (int)Keys.PrintScreen);
 
 			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormClose);
@@ -47,7 +48,7 @@ namespace AeroShot
         {
             foreach (var id in _windowId)
             {
-                WindowsApi.UnregisterHotKey(Handle, id);
+                User32.UnregisterHotKey(Handle, id);
             }
         }
 
@@ -91,7 +92,7 @@ namespace AeroShot
         {
             return
                 new ScreenshotTask(
-                    WindowsApi.GetForegroundWindow(),
+                    User32.GetForegroundWindow(),
                     _settings.clipboardButton,
                     _settings.folderTextBox,
                     _settings.resizeCheckbox,

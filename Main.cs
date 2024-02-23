@@ -22,6 +22,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using Microsoft.Win32;
+using Vanara.PInvoke;
 
 namespace AeroShot
 {
@@ -112,7 +113,7 @@ namespace AeroShot
 
             bool aeroEnabled = true;
             try {
-                WindowsApi.DwmIsCompositionEnabled(out aeroEnabled);
+                DwmApi.DwmIsCompositionEnabled(out aeroEnabled);
             }
             catch (Exception)
             {
